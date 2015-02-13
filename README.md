@@ -1,7 +1,8 @@
 # zoho-crm-php-api
 An easy to use PHP library for Zoho CRM
 
-===Known Bugs===
+Known Bugs
+==============
 json_to_array() doesn't work when you feed it multiple records
 
 Sample usage:

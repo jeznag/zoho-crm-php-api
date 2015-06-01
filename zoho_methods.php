@@ -27,8 +27,6 @@ class Zoho {
         $post = array(
             'newFormat' => 1,
             'authtoken' => $this->authtoken,
-            //'ticket' => $this->ticket,
-            //'apikey' => $this->apikey,
             'version' => 2,
             'scope'=>'crmapi',
             'selectColumns' =>'All',
@@ -85,8 +83,6 @@ class Zoho {
         $xmldata = $this->XMLfy($update_data, $module);
         $post = array(
             'newFormat' => 1,
-            //'ticket' => $this->ticket,
-            //'apikey' => $this->apikey,
 	    'authtoken' => $this->authtoken,
             'version' => 2,
             'xmlData' => $xmldata,
@@ -96,14 +92,6 @@ class Zoho {
         );
 
         array_merge($post, $extra_post_parameters);
-
-        // We'll bump created time to make sure that duplicate data entry
-        // gets bumped up on the salesdroids list
-
-        // $created = strftime('%Y-%m-%d %H:%M');
-        // $post['Created Time'] = $created;
-
-        // XXX: Good idea but Zoho silently ignores changes to the creation time
 
         $q = http_build_query($post);
 
@@ -135,18 +123,38 @@ class Zoho {
 
         array_merge($post, $extra_post_parameters);
 
-        // We'll bump created time to make sure that duplicate data entry
-        // gets bumped up on the salesdroids list
-
-        // $created = strftime('%Y-%m-%d %H:%M');
-        // $post['Created Time'] = $created;
-
-        // XXX: Good idea but Zoho silently ignores changes to the creation time
-
         $q = http_build_query($post);
 
 
         $response = $this->openUrl("https://crm.zoho.com/crm/private/xml/$module/insertRecords", $q);
+
+        $this->check_successful_xml($response);
+
+        return $response;
+
+    }
+    
+    /**
+    * https://crm.zoho.com/crm/private/xml/Leads/convertLead?newFormat=1&apikey=APIkey&ticket=Ticket
+    **/
+    public function convert_lead($lead_ID, $potential_data, $extra_post_parameters=array()) {
+        $this->ensure_opened();
+        $xmldata = $this->XMLfy($potential_data, "Potentials");
+        $post = array(
+            'newFormat' => 1,
+	    'authtoken' => $this->authtoken,
+            'version' => 2,
+            'xmlData' => $xmldata,
+            'duplicateCheck' => 2,
+            'wfTrigger' => 'true',
+            'leadId' => $lead_ID
+        );
+
+        array_merge($post, $extra_post_parameters);
+
+        $q = http_build_query($post);
+
+        $response = openUrl("https://crm.zoho.com/crm/private/xml/Leads/convertLead", $q);
 
         $this->check_successful_xml($response);
 
@@ -167,10 +175,6 @@ class Zoho {
 	        curl_setopt($ch,CURLOPT_VERBOSE, true);
 	        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
 	        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-	
-	       // log output
-	       //$f = fopen("/tmp/zoho-curl.txt", "wt");
-	       //curl_setopt($ch,CURLOPT_STDERR, $f);
 	
 	   }
 	

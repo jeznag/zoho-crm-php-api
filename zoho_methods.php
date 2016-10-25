@@ -203,7 +203,7 @@ class Zoho {
         foreach ($arr as $a) {
             $xml .= "<row no=\"$no\">";
             foreach ($a as $key => $val) {
-                $xml .= "<FL val=\"$key\">$val</FL>";
+                $xml .= "<FL val=\"$key\"><![CDATA[" . trim($val) . "]]></FL>";
             }
             $xml .= "</row>";
             $no += 1;

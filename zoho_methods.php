@@ -86,19 +86,80 @@ class Zoho {
 
         $q = http_build_query($post);
 
+
         $response = $this->openUrl("{$this->domain}/crm/private/json/$module/searchRecords",$q);
 
         return $this->json_to_array(json_decode($response), $module);
 
     }
 
-    public function json_to_array($response_data, $module){
+
+
+
+    /**
+     * @param $response_data string|object|array
+     * @param $module
+     * @param $unique_as_multiple   boolean     if True, the value returned will be in a multidimentional aray even if there is only 1 record
+     * @return array
+     */
+    public function json_to_array($response_data, $module,$unique_as_multiple = false){
+
+
         $array_contents = array();
-        foreach($response_data->response->result->$module->row->FL as $key => $record){
-            $array_contents[$record->val] = $record->content;
+
+
+        if(is_object($response_data)){
+            $response_data = json_decode(json_encode($response_data),true);
+        }else if(is_string($response_data)){
+            $response_data = json_decode($response_data,true);
+        }
+
+
+        if(isset($response_data['response']['result'][$module]['row'][0])){
+            $entries = $response_data['response']['result'][$module]['row'];
+
+
+            foreach($entries as $entry){
+                $array_contents[] = $this->get_entry_value($entry);
+            }
+
+
+            return $array_contents;
+
+        }else{
+
+            if(!isset($response_data['response']['result'])){
+                return array();
+            }
+
+            $data = $this->get_entry_value($response_data['response']['result'][$module]['row']);
+
+            return $unique_as_multiple ? array($data) : $data;
+
+        }
+
+    }
+
+
+    /**
+     * @param $entry
+     * @return array
+     */
+    protected function get_entry_value($entry)
+    {
+        $array_contents = array();
+
+
+        foreach($entry['FL'] as $key => $record){
+            $array_contents[$record['val']] = $record['content'];
         }
         return $array_contents;
+
+
     }
+
+
+
 
     /**
      *  Updates a specified record in Zoho CRM
@@ -124,7 +185,7 @@ class Zoho {
             'id' => $record_ID
         );
 
-        array_merge($post, $extra_post_parameters);
+        $post = array_merge($post, $extra_post_parameters);
 
         $q = http_build_query($post);
 
@@ -133,9 +194,93 @@ class Zoho {
 
         $this->check_successful_xml($response);
 
-        return true;
+        return $response;
 
     }
+
+
+
+     /**
+     *  Updates a specified record in Zoho CRM
+      *
+     *  @param $module                  array       The module in which the record resides
+     *  @param $record_ID               int         The ID of the record to be updated
+     *  @param $relatedModule           string      The Related Module you want to update
+     *  @param $update_data             string      The new data for the record
+     *  @param $extra_post_parameters   array
+     *
+     * https://crm.zoho.com/crm/private/xml/Module/updateRecords?newFormat=1&apikey=APIkey&ticket=Ticket
+     *
+     * @return string
+     * @throws ZohoException
+     */
+    public function update_related_records($module, $record_ID,$relatedModule, $update_data, $extra_post_parameters=array()) {
+        $xmldata = $this->XMLfy($update_data, $relatedModule);
+
+
+
+        $post = array(
+            'newFormat' => 1,
+            'authtoken' => $this->authtoken,
+            'version' => 2,
+            'xmlData' => $xmldata,
+            'duplicateCheck' => 2,
+            'wfTrigger' => 'true',
+            'scope'=>'crmapi',
+            'id' => $record_ID,
+            'relatedModule' => $relatedModule
+        );
+
+        $post = array_merge($post, $extra_post_parameters);
+
+        $q = http_build_query($post);
+
+        $response = $this->openUrl("{$this->domain}/crm/private/xml/$module/updateRelatedRecords", $q);
+
+        $this->check_successful_xml($response);
+
+        return $response;
+
+    }
+
+
+        /**
+     * @param $module   string
+     * @param $extra_post_parameters    array
+     * @param $mine    boolean      If true, It will retrieve only the owner's record
+     *
+     * @return mixed|null
+     * @throws ZohoException
+     */
+    public function get_records($module,$extra_post_parameters = array(),$mine = false)
+    {
+
+        $post = array(
+            'newFormat' => 2,
+            'authtoken' => $this->authtoken,
+            'version' => 2,
+            'scope'=>'crmapi',
+            'selectColumns' => 'First Name,Last Name,Company,Email,Website'
+        );
+
+        $post = array_merge($post, $extra_post_parameters);
+
+
+        $q = http_build_query($post);
+
+
+        $key = $mine ? 'getMyRecords' : 'getRecords';
+
+        $response = $this->openUrl("{$this->domain}/crm/private/json/$module/$key", $q);
+
+
+        return $this->json_to_array($response, $module,true);
+
+    }
+
+
+
+
 
     /**
      *  Adds a new record in Zoho CRM
@@ -159,7 +304,7 @@ class Zoho {
             'wfTrigger' => 'true'
         );
 
-        array_merge($post, $extra_post_parameters);
+        $post = array_merge($post, $extra_post_parameters);
 
         $q = http_build_query($post);
 
@@ -171,6 +316,13 @@ class Zoho {
         return $response;
 
     }
+
+
+
+
+
+
+
 
 
     /**
@@ -196,7 +348,7 @@ class Zoho {
             'leadId' => $lead_ID
         );
 
-        array_merge($post, $extra_post_parameters);
+        $post = array_merge($post, $extra_post_parameters);
 
         $q = http_build_query($post);
 

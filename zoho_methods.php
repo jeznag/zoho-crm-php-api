@@ -87,7 +87,6 @@ class Zoho {
         $q = http_build_query($post);
 
 
-
         $response = $this->openUrl("{$this->domain}/crm/private/json/$module/searchRecords",$q);
 
         return $this->json_to_array(json_decode($response), $module);
@@ -195,7 +194,7 @@ class Zoho {
 
         $this->check_successful_xml($response);
 
-        return true;
+        return $response;
 
     }
 

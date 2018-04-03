@@ -1,5 +1,7 @@
 # zoho-crm-php-api
-An easy to use PHP library for Zoho CRM
+An easy to use PHP library for Zoho CRM API v1.
+
+NB - API v1 is deprecated and will be turned off in December 2019. If you're starting a new project, you're better off using the official PHP SDK for API v2: https://www.zoho.com/crm/help/developer/server-side-sdks/php.html
 
 ## Examples:
 **Sample usage of insert_record:**
